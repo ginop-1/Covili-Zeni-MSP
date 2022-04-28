@@ -162,3 +162,5 @@ cython_debug/
 .vscode/
 venv/
 venv
+config.json
+*.json
