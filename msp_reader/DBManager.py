@@ -26,7 +26,7 @@ class InfluxClient(InfluxDBClient):
 
     def __init__(self, config_file: str = "config.json", **kwargs):
         with open(config_file, "r") as f:
-            self.config = json.load(f)
+            self.config = json.load(f)["Influx"]
 
         self.sync_write_api = self.write_api(write_options=SYNCHRONOUS)
 
