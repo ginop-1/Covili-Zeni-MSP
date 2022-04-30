@@ -17,8 +17,12 @@ int main(void) {
     while (1) {
         if (millis()-time > 1000) {
             time=millis();
-            const char * temp = getTemperature();
-            sendString(temp);
+            unsigned char read;
+            breceive_ch(&read);
+            if (read == 'S') {
+                const char * temp = getTemperature();
+                sendString(temp);
+            }
         }
     }
     return 0;
