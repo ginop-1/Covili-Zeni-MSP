@@ -12,8 +12,6 @@ class InfluxClient(InfluxDBClient):
     ----------
     config : dict
         Loaded config.json
-    sync_write_api : WriteApi
-        Synchronous write API
     Other attributes are inherited from InfluxDBClient
 
     Methods
@@ -28,7 +26,7 @@ class InfluxClient(InfluxDBClient):
         with open(config_file, "r") as f:
             self.config = json.load(f)["Influx"]
 
-        self.sync_write_api = self.write_api(write_options=SYNCHRONOUS)
+        # self.sync_write_api = self.write_api(write_options=SYNCHRONOUS)
 
         super().__init__(
             url=self.config["url"],
@@ -50,7 +48,9 @@ class InfluxClient(InfluxDBClient):
         None
         """
 
-        self.sync_write_api.write(
+        print("Writing record... temperature: ", temperature)
+
+        self.write_api(write_options=SYNCHRONOUS).write(
             self.config["bucket"],
             self.config["org"],
             [
@@ -66,3 +66,8 @@ class InfluxClient(InfluxDBClient):
                 }
             ],
         )
+
+
+if __name__ == "__main__":
+    influx_client = InfluxClient()
+    influx_client.write_record(25.5)

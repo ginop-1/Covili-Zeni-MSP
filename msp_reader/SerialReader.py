@@ -27,8 +27,9 @@ class SerialReader(mqtt.Client):
 
     def main_loop(self):
         while True:
-            sleep(3)  # TODO: REMOVE THIS WITH 120 (2 minutes)
-            self.serial.write(b"S")
+            sleep(120)  # wait 2 minutes
+            self.log("Sending message...")
+            self.serial.write("S".encode("ascii"))
             while self.serial.inWaiting() <= 0:
                 sleep(0.5)
             # serial output is in format: "t1,t2..." ex: "28.5,26.7,25.9..."
@@ -41,6 +42,8 @@ class SerialReader(mqtt.Client):
 
             if len(temp) >= 5:
                 print("no")
+
+            self.serial.write("A".encode("ascii"))
 
             # self.serial.write(b"B")
             try:

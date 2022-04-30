@@ -1,3 +1,5 @@
+from .DBManager import InfluxClient
+
 import paho.mqtt.client as mqtt
 
 
@@ -5,6 +7,7 @@ class MQTTListener(mqtt.Client):
     def __init__(self, id: str, topic: str, broker: str) -> None:
         self.topic = topic
         self.broker = broker
+        self.influx_client = InfluxClient()
         super().__init__(id)
 
     def log(self, msg: str):
@@ -15,10 +18,15 @@ class MQTTListener(mqtt.Client):
         client.subscribe(self.topic)
 
     def on_subscribe(self, client, userdata, mid, granted_qos):
-        self.log(f"subscribed {self.topic} with QoS: {granted_qos[0]}\n")
+        self.log(f"subscribed {self.topic} with QoS: {granted_qos[0]}")
 
     def on_message(self, client, userdata, msg):
-        self.log(msg.payload.decode("utf-8"))
+        try:
+            temp = float(msg.payload.decode("utf-8"))
+        except ValueError:
+            self.log("invalid message")
+            return
+        self.influx_client.write_record(temp)
 
     def run(self):
         self.connect(self.broker)
