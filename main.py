@@ -1,4 +1,4 @@
-from msp_reader.runner import Runner
+from msp_reader.runner import run
 
 if __name__ == "__main__":
-    Runner.run()
+    run()
