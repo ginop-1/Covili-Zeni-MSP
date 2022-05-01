@@ -1,5 +1,8 @@
-from .DBManager import InfluxClient
+from influxdb_client import InfluxDBClient
+from influxdb_client.client.write_api import SYNCHRONOUS
 
+import logging
+import json
 import paho.mqtt.client as mqtt
 
 
@@ -7,39 +10,59 @@ class MQTTListener(mqtt.Client):
     def __init__(self, id: str, topic: str, broker: str) -> None:
         self.topic = topic
         self.broker = broker
-        self.influx_client = InfluxClient()
+
+        config = json.load(open("config.json", "r"))["Influx"]
+        self.influx_client = InfluxDBClient(
+            url=config["url"], token=config["token"], org=config["org"]
+        )
+        self.default_bucket = config["bucket"]
+
         super().__init__(id)
 
-    def log(self, msg: str):
-        print(f"{self.__class__.__name__}: {msg}")
-
     def on_connect(self, client, userdata, flags, rc):
-        self.log(mqtt.connack_string(rc))
+        logging.info(mqtt.connack_string(rc))
         client.subscribe(self.topic)
 
     def on_subscribe(self, client, userdata, mid, granted_qos):
-        self.log(f"subscribed {self.topic} with QoS: {granted_qos[0]}")
+        logging.info(f"subscribed {self.topic} with QoS: {granted_qos[0]}")
 
     def on_message(self, client, userdata, msg):
         try:
             temp = float(msg.payload.decode("utf-8"))
         except ValueError:
-            self.log("invalid message")
+            logging.info("invalid message")
             return
-        self.influx_client.write_record(temp)
+
+        logging.info(f"received temperature: {temp}. Writing to DB...")
+        self.influx_client.write_api(write_options=SYNCHRONOUS).write(
+            self.default_bucket,
+            self.influx_client.org,
+            [
+                {
+                    "measurement": "temperatures",
+                    "tags": {
+                        "device": "MSP430",
+                        "group": 5,
+                    },
+                    "fields": {
+                        "temp": temp,
+                    },
+                }
+            ],
+        )
 
     def run(self):
         self.connect(self.broker)
         try:
             self.loop_forever()
         except KeyboardInterrupt:
-            self.log("\nExiting...")
+            logging.info("\nExiting...")
         finally:
+            self.loop_stop()
             self.disconnect()
 
 
 if __name__ == "__main__":
-    mqtt_listener = MQTTListener(
-        "MQTT_LISTENER", "4F/temperature/group5", "mqtt.ssh.edu.it"
-    )
+    config = json.load(open("config.json", "r"))["MQTT"]
+    mqtt_listener = MQTTListener("LISTENER", config["topic"], config["broker"])
     mqtt_listener.run()

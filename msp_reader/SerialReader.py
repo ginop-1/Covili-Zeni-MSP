@@ -2,6 +2,7 @@ import paho.mqtt.client as mqtt
 from serial import Serial
 from time import sleep
 from threading import Thread
+import logging
 
 
 class SerialReader(mqtt.Client):
@@ -10,25 +11,22 @@ class SerialReader(mqtt.Client):
         self.broker = broker
         super().__init__(id)
 
-    def log(self, msg: str):
-        print(f"{self.__class__.__name__}: {msg}")
-
     def on_connect(self, client, userdata, flags, rc):
-        self.log(mqtt.connack_string(rc))
+        logging.info(mqtt.connack_string(rc))
 
     def on_subscribe(self, client, userdata, mid, granted_qos):
-        self.log(f"subscribed {self.topic} with QoS: {granted_qos[0]}\n")
+        logging.info(f"subscribed {self.topic} with QoS: {granted_qos[0]}\n")
 
     def on_message(self, client, userdata, msg):
-        self.log(msg.payload.decode("utf-8"))
+        logging.info(msg.payload.decode("utf-8"))
 
     def connect_serial(self):
         self.serial = Serial("/dev/ttyACM1", 9600)
 
     def main_loop(self):
         while True:
-            sleep(120)  # wait 2 minutes
-            self.log("Sending message...")
+            sleep(15)  # wait 2 minutes
+            logging.info("Sending message...")
             self.serial.write("S".encode("ascii"))
             while self.serial.inWaiting() <= 0:
                 sleep(0.5)
@@ -37,15 +35,10 @@ class SerialReader(mqtt.Client):
                 self.serial.read(self.serial.inWaiting())
                 .decode("ascii")
                 .split(",")
-            )
-            temp = temp[-2]  # get the last measurement
+            )[
+                -2
+            ]  # get the last measurement
 
-            if len(temp) >= 5:
-                print("no")
-
-            self.serial.write("A".encode("ascii"))
-
-            # self.serial.write(b"B")
             try:
                 self.publish(self.topic, temp)
             except UnboundLocalError:
@@ -61,9 +54,10 @@ class SerialReader(mqtt.Client):
         try:
             self.loop_forever()
         except KeyboardInterrupt:
-            self.log("\nExiting...")
+            logging.info("Exiting...")
         finally:
             self.serial.close()
+            self.loop_stop()
             self.disconnect()
 
 
