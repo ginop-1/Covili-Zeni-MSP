@@ -25,7 +25,7 @@ class SerialReader(mqtt.Client):
 
     def main_loop(self):
         while True:
-            sleep(15)  # wait 2 minutes
+            sleep(120)  # wait 2 minutes
             logging.info("Sending message...")
             self.serial.write("S".encode("ascii"))
             while self.serial.inWaiting() <= 0:
