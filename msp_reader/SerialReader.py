@@ -6,9 +6,10 @@ import logging
 
 
 class SerialReader(mqtt.Client):
-    def __init__(self, id: str, topic: str, broker: str) -> None:
+    def __init__(self, id: str, topic: str, broker: str, serial_port: str) -> None:
         self.topic = topic
         self.broker = broker
+        self.serial = Serial(serial_port, 9600)
         super().__init__(id)
 
     def on_connect(self, client, userdata, flags, rc):
@@ -19,9 +20,6 @@ class SerialReader(mqtt.Client):
 
     def on_message(self, client, userdata, msg):
         logging.info(msg.payload.decode("utf-8"))
-
-    def connect_serial(self):
-        self.serial = Serial("/dev/ttyACM1", 9600)
 
     def main_loop(self):
         while True:
@@ -45,7 +43,6 @@ class SerialReader(mqtt.Client):
                 pass
 
     def run(self):
-        self.connect_serial()
         self.connect(self.broker)
         # create a thread for sending messages
         self.send_thread = Thread(target=self.main_loop)
