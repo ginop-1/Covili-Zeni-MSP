@@ -6,7 +6,9 @@ import logging
 
 
 class SerialReader(mqtt.Client):
-    def __init__(self, id: str, topic: str, broker: str, serial_port: str) -> None:
+    def __init__(
+        self, id: str, topic: str, broker: str, serial_port: str
+    ) -> None:
         self.topic = topic
         self.broker = broker
         self.serial = Serial(serial_port, 9600)
@@ -28,19 +30,9 @@ class SerialReader(mqtt.Client):
             self.serial.write("S".encode("ascii"))
             while self.serial.inWaiting() <= 0:
                 sleep(0.5)
-            # serial output is in format: "t1,t2..." ex: "28.5,26.7,25.9..."
-            temp = (
-                self.serial.read(self.serial.inWaiting())
-                .decode("ascii")
-                .split(",")
-            )[
-                -2
-            ]  # get the last measurement
-
-            try:
-                self.publish(self.topic, temp)
-            except UnboundLocalError:
-                pass
+            temp = self.serial.read(self.serial.inWaiting()).decode("ascii")
+            logging.log(logging.INFO, f"Received: {temp}")
+            self.publish(self.topic, temp)
 
     def run(self):
         self.connect(self.broker)

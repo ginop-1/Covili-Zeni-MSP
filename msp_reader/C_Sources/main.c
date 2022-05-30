@@ -22,6 +22,7 @@ int main(void) {
             if (read == 'S') {
                 const char * temp = getTemperature();
                 sendString(temp);
+                read = 'a';
             }
         }
     }
@@ -62,7 +63,7 @@ const char * getTemperature(void) {
     }
 
     int decpart = (int)((temperatureDegC-intpart)*10);
-    sprintf(tempString, "%d.%d,\0", intpart, decpart);
+    sprintf(tempString, "%d.%d\0", intpart, decpart);
 
     while (ADC12CTL1 & ADC12BUSY);
 
